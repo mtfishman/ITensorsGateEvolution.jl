@@ -148,19 +148,6 @@ function ops(s::Vector{<:Index}, C::ProductOps)
 end
 
 """
-    swapbondsites(ψ::MPS, b::Int; kwargs...)
-
-Swap the sites `b` and `b+1`.
-"""
-swapbondsites(ψ::MPS, b::Int;
-              ortho::String = "left",
-              cutoff::Real = 1e-15) =
-  replacebond(ψ, b, ψ[b] * ψ[b+1];
-              ortho = ortho,
-              swapsites = true,
-              cutoff = cutoff)
-
-"""
     movesite(::MPS, n1::Int, n2::Int)
 
 Create a new MPS where the site at `n1` is moved to `n2`
@@ -197,8 +184,8 @@ end
 
 Apply the ITensors `ops` to the MPS `ψ`.
 """
-function product(ops::Vector{<:ITensor},
-                 ψ0::MPS)
+function ITensors.product(ops::Vector{<:ITensor},
+                          ψ0::MPS)
   ψ = copy(ψ0)
   d = sitedict(siteinds(ψ0))
   for o in ops
