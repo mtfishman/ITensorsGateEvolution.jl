@@ -1,0 +1,13 @@
+name = "ITensorsGateEvolution"
+uuid = "5a59e386-e104-4d96-a0e8-6ba0cc744516"
+authors = ["Matthew Fishman <mfishman@flatironinstitute.org> and contributors"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
