@@ -13,7 +13,7 @@ gates = ops(s, pos)
 ψ0 = productMPS(s, ["0" for n in 1:N])
 
 # Apply the gates
-ψ = product(gates, ψ0)
+ψ = apply(gates, ψ0)
 
 # Move site 1 to position 3
 ψ′ = movesite(ψ, 1, 3)
