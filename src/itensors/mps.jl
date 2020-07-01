@@ -66,9 +66,14 @@ function findfirstsiteind(ψ::Union{MPS, MPO},
   return findfirst(hasind(s), ψ)
 end
 
+function findfirstsiteinds(ψ::Union{MPS, MPO},
+                           s)
+  return findfirst(hasinds(s), ψ)
+end
+
 function findsiteinds(ψ::Union{MPS, MPO},
-                      inds::IndexSet{N}) where {N}
-  return ntuple(n -> findfirstsiteind(ψ, inds[n]), Val(N))
+                      inds::Vector)
+  return [findfirstsiteinds(ψ, inds[n]) for n in 1:length(ψ)]
 end
 
 function findcommonsiteinds(o::ITensor,

@@ -95,16 +95,18 @@ function ITensors.product(ops::Vector{<:ITensor},
                           ψ::Union{MPS, MPO};
                           apply_dag::Bool = false,
                           kwargs...)
-  #s = firstsiteinds(ψ; plev = 0)
+  ψ0 = ψ
+  s0 = siteinds(ψ0)
   for o in ops
     ψ = product(o, ψ; move_sites_back = false,
                       apply_dag = apply_dag,
                       kwargs...)
   end
-  #ns = findsiteinds(ψ, s)
-  #ns′ = 1:length(ψ)
-  # TODO: move the sites back to the original ordering
-  # ψ = movesites(ψ, ns, ns′; kwargs...)
+  s = siteinds(ψ)
+  ns = 1:length(ψ)
+  ns′ = findsiteinds(ψ0, s)
+  # TODO: Move the sites back to the original ordering
+  #ψ = movesites(ψ, ns, ns′; kwargs...)
   return ψ
 end
 

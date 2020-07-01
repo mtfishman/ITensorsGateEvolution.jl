@@ -53,9 +53,17 @@ gates = ops(s, os)
 M0 = MPO(s, "Id")
 
 # Apply the gates
-M = apply(gates, M0; apply_dag = true, cutoff = 1e-15, maxdim = 20)
+
+s0 = siteinds(M0)
+
+M = apply(gates, M0; apply_dag = true, cutoff = 1e-15, maxdim = 100)
 @show dim(s[1])^(N ÷ 2)
 @show maxlinkdim(M)
+
+s = siteinds(M)
+for n in 1:N
+  #@assert hassameinds(s[n], s0[n])
+end
 
 println("Evolution complete, test the result")
 

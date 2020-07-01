@@ -1,4 +1,13 @@
 
+"""
+    hasinds(is)
+
+Returns an anonymous function `x -> hasinds(x, is)` which
+accepts an ITensor or IndexSet and returns `true` if the
+ITensor or IndexSet has the indices `is`.
+"""
+ITensors.hasinds(s) = x -> hasinds(x, s)
+
 @eval struct Order{x}
   (OrderT::Type{ <: Order})() = $(Expr(:new, :OrderT))
 end
