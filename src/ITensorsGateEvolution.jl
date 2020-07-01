@@ -12,6 +12,7 @@ include("itensors/index.jl")
 include("itensors/indexset.jl")
 include("itensors/itensor.jl")
 include("itensors/mps.jl")
+include("itensors/sitetype.jl")
 
 # ProductOps type
 include("productops.jl")

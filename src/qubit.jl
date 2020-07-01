@@ -31,7 +31,7 @@ ITensors.op(::TagType"qubit",
 ITensors.op(::TagType"qubit",
             ::OpName"X",
             s::Index) = 
-  itensor([0 1; 1 0], s', dag(s))
+  itensor([0.0 1.0; 1.0 0.0], s', dag(s))
 
 ITensors.op(::TagType"qubit",
             ::OpName"iY",
