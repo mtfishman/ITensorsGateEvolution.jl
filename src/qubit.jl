@@ -2,66 +2,59 @@
 # qubit
 #
 
-function ITensors.siteinds(::TagType"qubit", N::Int;
-                           conserve_qns::Bool = false)
+function ITensors.space(::SiteType"qubit";
+                        conserve_qns::Bool = false)
   if conserve_qns
-    space = [QN() => 2]
-  else
-    space = 2
+    return [QN() => 2]
   end
-  [Index(space, "Site,qubit,n=$n") for n in 1:N]
+  return 2
 end
 
-function ITensors.state(::TagType"qubit",
-                        st::AbstractString)
-  if st == "0"
-    return 1
-  elseif st == "1"
-    return 2
-  end
-  throw(ArgumentError("State string \"$st\" not recognized for SpinHalf site"))
-  return 0
-end
+ITensors.state(::SiteType"qubit",
+               ::ITensors.StateName"0") = 1
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Id",
+ITensors.state(::SiteType"qubit",
+               ::ITensors.StateName"1") = 2
+
+ITensors.op(::OpName"Id",
+            ::SiteType"qubit",
             s::Index) =
   itensor([1 0; 0 1], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"X",
+ITensors.op(::OpName"X",
+            ::SiteType"qubit",
             s::Index) = 
   itensor([0.0 1.0; 1.0 0.0], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"iY",
+ITensors.op(::OpName"iY",
+            ::SiteType"qubit",
             s::Index) = 
   itensor([0 1; -1 0], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Y",
+ITensors.op(::OpName"Y",
+            ::SiteType"qubit",
             s::Index) = 
   itensor([0 -im; im 0], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Z",
+ITensors.op(::OpName"Z",
+            ::SiteType"qubit",
             s::Index) = 
   itensor([1 0; 0 -1], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"H",
+ITensors.op(::OpName"H",
+            ::SiteType"qubit",
             s::Index) = 
   itensor([1/sqrt(2) 1/sqrt(2);
            1/sqrt(2) -1/sqrt(2)], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Rx",
+ITensors.op(::OpName"Rx",
+            ::SiteType"qubit",
             s::Index; θ::Number) =
   itensor([cos(θ/2)      -im*sin(θ/2.);
            -im*sin(θ/2.) cos(θ/2.)], s', dag(s))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Sw",
+ITensors.op(::OpName"Sw",
+            ::SiteType"qubit",
             s1::Index,
             s2::Index) =
   itensor([1 0 0 0;
@@ -71,14 +64,14 @@ ITensors.op(::TagType"qubit",
           s1', s2',
           dag(s1), dag(s2))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"rand",
+ITensors.op(::OpName"rand",
+            ::SiteType"qubit",
             s::Index...) =
   randomITensor(prime.(s)...,
                 dag.(s)...)
 
-ITensors.op(::TagType"qubit",
-            ::OpName"Cx",
+ITensors.op(::OpName"Cx",
+            ::SiteType"qubit",
             s1::Index,
             s2::Index) =
   itensor([1 0 0 0;
@@ -88,8 +81,8 @@ ITensors.op(::TagType"qubit",
           s1', s2',
           dag(s1), dag(s2))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"T",
+ITensors.op(::OpName"T",
+            ::SiteType"qubit",
             s1::Index,
             s2::Index,
             s3::Index) =
@@ -104,8 +97,8 @@ ITensors.op(::TagType"qubit",
           s1', s2', s3',
           dag(s1), dag(s2), dag(s3))
 
-ITensors.op(::TagType"qubit",
-            ::OpName"noise",
+ITensors.op(::OpName"noise",
+            ::SiteType"qubit",
             s::Index...;
             krausind = hasqns(s[1]) ? Index([QN() => 2], "kraus") : Index(2, "kraus")) =
   randomITensor(prime.(s)..., dag.(s)..., krausind)

@@ -1,192 +1,22 @@
 
-"""
-    movesite(::Union{MPS, MPO}, n1::Int, n2::Int)
+#Base.keys(ψ::Union{MPS, MPO}) = keys(ITensors.data(ψ))
 
-Create a new MPS where the site at `n1` is moved to `n2`
-"""
-function movesite(ψ::Union{MPS, MPO},
-                  n1::Int, n2::Int;
-                  orthocenter::Int = n2,
-                  kwargs...)
-  n1 == n2 && return ψ
-  ψ = orthogonalize(ψ, n2)
-  r = n1:n2-1
-  ortho = "left"
-  if n1 > n2
-    r = reverse(n2:n1-1)
-    ortho = "right"
-  end
-  for n in r
-    ψ = swapbondsites(ψ, n; ortho = ortho, kwargs...)
-  end
-  ψ = orthogonalize(ψ, orthocenter)
-  return ψ
-end
+#function findfirstsiteind(ψ::Union{MPS, MPO},
+#                          s::Index)
+#  return findfirst(hasind(s), ψ)
+#end
+#
+#function findfirstsiteinds(ψ::Union{MPS, MPO},
+#                           s)
+#  return findfirst(hasinds(s), ψ)
+#end
 
-function movesites(ψ::Union{MPS, MPO},
-                   ns, ns′; kwargs...)
-  @assert length(ns) == length(ns′)
-  N = length(ns)
-  for i in 1:N
-    ψ = movesite(ψ, ns[i], ns′[i]; kwargs...)
-  end
-  return ψ
-end
-
-"""
-    swapbondsites(ψ::MPO, b::Int; kwargs...)
-
-Swap the sites `b` and `b+1`.
-"""
-function ITensors.swapbondsites(ψ::MPO, b::Int; kwargs...)
-  ortho = get(kwargs, :ortho, "right")
-  if ortho == "left"
-    orthocenter = b+1
-  elseif ortho == "right"
-    orthocenter = b
-  end
-  if ITensors.leftlim(ψ) < b - 1
-    ψ = orthogonalize(ψ, b)
-  elseif ITensors.rightlim(ψ) > b + 2
-    ψ = orthogonalize(ψ, b + 1)
-  end
-  #kwargs = setindex(values(kwargs), [2, 1], :parm)
-  ψ = replacesites(ψ, ψ[b] * ψ[b+1];
-                   firstsite = b, lastsite = b+1,
-                   orthocenter = orthocenter,
-                   perm = [2, 1],
-                   kwargs...)
-  return ψ
-end
-
-Base.keys(ψ::Union{MPS, MPO}) = keys(ITensors.data(ψ))
-
-function findfirstsiteind(ψ::Union{MPS, MPO},
-                          s::Index)
-  return findfirst(hasind(s), ψ)
-end
-
-function findfirstsiteinds(ψ::Union{MPS, MPO},
-                           s)
-  return findfirst(hasinds(s), ψ)
-end
-
-function findsiteinds(ψ::Union{MPS, MPO},
-                      inds::Vector)
-  return [findfirstsiteinds(ψ, inds[n]) for n in 1:length(ψ)]
-end
-
-function findcommonsiteinds(o::ITensor,
-                            ψ::Union{MPS, MPO})
-  ns = Int[]
-  for (n, ψn) in enumerate(ψ)
-    if hascommoninds(o, ψn)
-      push!(ns, n)
-    end
-  end
-  ns
-end
-
-# TODO: add a version of replacesites that
-# determines `firstsite` and `lastsite` from common
-# site indices of ψ and A
-
-"""
-    MPS(::ITensor, sites)
-
-Construct an MPS from an ITensor by decomposing it site
-by site.
-"""
-function MPS(A::ITensor, sites;
-             firstlinkind::Union{Nothing, Index} = nothing,
-             lastlinkind::Union{Nothing, Index} = nothing,
-             orthocenter::Int = length(sites),
-             kwargs...)
-  N = length(sites)
-  @assert order(A) == N + !isnothing(firstlinkind) + !isnothing(lastlinkind)
-  @assert hasinds(A, sites)
-  @assert isnothing(firstlinkind) || hasind(A, firstlinkind)
-  @assert isnothing(lastlinkind) || hasind(A, lastlinkind)
-
-  # TODO: generalize to other orthocenters.
-  # To minimize work, may need to loop from
-  # 1:orthocenter and reverse(orthocenter:N)
-  @assert orthocenter == N
-
-  ψ = Vector{ITensor}(undef, N)
-  Ã = A
-  l = firstlinkind
-  for n in 1:N-1
-    s = sites[n]
-    Lis = isnothing(l) ? (s,) : (l, s)
-    L, R = factorize(Ã, Lis; kwargs...)
-    l = commonind(L, R)
-    ψ[n] = L
-    Ã = R
-  end
-  ψ[N] = Ã
-  return MPS(ψ)
-end
-
-function MPO(A::ITensor, sites;
-             firstlinkind::Union{Nothing, Index} = nothing,
-             lastlinkind::Union{Nothing, Index} = nothing,
-             orthocenter::Int = length(sites),
-             kwargs...)
-  N = length(sites)
-  @assert order(A) == 2*N + !isnothing(firstlinkind) + !isnothing(lastlinkind)
-  @assert hasinds(A, sites)
-  @assert hasinds(A, prime.(sites))
-  @assert isnothing(firstlinkind) || hasind(A, firstlinkind)
-  @assert isnothing(lastlinkind) || hasind(A, lastlinkind)
-
-  # TODO: generalize to other orthocenters.
-  # To minimize work, may need to loop from
-  # 1:orthocenter and reverse(orthocenter:N)
-  @assert orthocenter == N
-
-  ψ = Vector{ITensor}(undef, N)
-  Ã = A
-  l = firstlinkind
-  for n in 1:N-1
-    s = sites[n]
-    Lis = isnothing(l) ? (s, s') : (l, s, s')
-    L, R = factorize(Ã, Lis; kwargs...)
-    l = commonind(L, R)
-    ψ[n] = L
-    Ã = R
-  end
-  ψ[N] = Ã
-  M = MPO(ψ)
-  ITensors.setleftlim!(M, orthocenter-1)
-  ITensors.setrightlim!(M, orthocenter+1)
-  return M
-end
-
-# TODO: define this for setting a range of MPS tensors
-function Base.setindex!(ψ::MPST, ϕ::MPST,
-                        r::UnitRange{Int64}) where {MPST <: Union{MPS, MPO}}
-  @assert length(r) == length(ϕ)
-  llim = ITensors.leftlim(ψ)
-  rlim = ITensors.rightlim(ψ)
-  for (j, n) in enumerate(r)
-    ψ[n] = ϕ[j]
-  end
-  if llim + 1 ≥ r[1]
-    ITensors.setleftlim!(ψ, ITensors.leftlim(ϕ) + r[1] - 1)
-  end
-  if rlim - 1 ≤ r[end]
-    ITensors.setrightlim!(ψ, ITensors.rightlim(ϕ) + r[1] - 1)
-  end
-  return ψ
-end
-
-function ITensors.productMPS(::Type{T},
-                             sites::Vector{<:Index},
-                             states::Union{String, Int}) where {T<:Number}
-  ivals = [state(sites[n], states) for n=1:length(sites)]
-  return productMPS(T, ivals)
-end
+#function ITensors.productMPS(::Type{T},
+#                             sites::Vector{<:Index},
+#                             states::Union{String, Int}) where {T<:Number}
+#  ivals = [state(sites[n], states) for n in 1:length(sites)]
+#  return productMPS(T, ivals)
+#end
 
 """
     siteind(M::MPO, j::Int; plev = 0, kwargs...)
@@ -247,6 +77,209 @@ Get a Vector of the first site Index found on each site of M.
 """
 firstsiteinds(M::MPO; kwargs...) =
   [firstsiteind(M, j; kwargs...) for j in 1:length(M)]
+
+function findsiteinds(ψ::Union{MPS, MPO},
+                      inds::Vector)
+  return [findfirstsiteinds(ψ, inds[n]) for n in 1:length(ψ)]
+end
+
+function findcommonsiteinds(o::ITensor,
+                            ψ::Union{MPS, MPO})
+  ns = Int[]
+  for (n, ψn) in enumerate(ψ)
+    if hascommoninds(o, ψn)
+      push!(ns, n)
+    end
+  end
+  ns
+end
+
+"""
+    movesite(::Union{MPS, MPO}, n1::Int, n2::Int)
+
+Create a new MPS where the site at `n1` is moved to `n2`
+"""
+function movesite(ψ::Union{MPS, MPO},
+                  n1::Int, n2::Int;
+                  orthocenter::Int = n2,
+                  kwargs...)
+  n1 == n2 && return ψ
+  ψ = orthogonalize(ψ, n2)
+  r = n1:n2-1
+  ortho = "left"
+  if n1 > n2
+    r = reverse(n2:n1-1)
+    ortho = "right"
+  end
+  for n in r
+    ψ = swapbondsites(ψ, n; ortho = ortho, kwargs...)
+  end
+  ψ = orthogonalize(ψ, orthocenter)
+  return ψ
+end
+
+function movesite(ns::Vector{Int},
+                  n1::Int, n2::Int)
+  n1 == n2 && return ns
+  r = n1:n2-1
+  if n1 > n2
+    r = reverse(n2:n1-1)
+  end
+  for n in r
+    #ns = swapbondsites(ns, n)
+    ns = replace(ns, n => n+1, n+1 => n)
+  end
+  return ns
+end
+
+function movesites(ψ::Union{MPS, MPO},
+                   ns, ns′; kwargs...)
+  @assert length(ns) == length(ns′)
+  N = length(ns)
+  ns = collect(ns)
+  for i in 1:N
+    ψ = movesite(ψ, ns[i], ns′[i]; kwargs...)
+    ns = movesite(ns, ns[i], ns′[i])
+  end
+  return ψ
+end
+
+"""
+    swapbondsites(ψ::MPO, b::Int; kwargs...)
+
+Swap the sites `b` and `b+1`.
+"""
+function ITensors.swapbondsites(ψ::MPO, b::Int; kwargs...)
+  ortho = get(kwargs, :ortho, "right")
+  if ortho == "left"
+    orthocenter = b+1
+  elseif ortho == "right"
+    orthocenter = b
+  end
+  if ITensors.leftlim(ψ) < b - 1
+    ψ = orthogonalize(ψ, b)
+  elseif ITensors.rightlim(ψ) > b + 2
+    ψ = orthogonalize(ψ, b + 1)
+  end
+  #kwargs = setindex(values(kwargs), [2, 1], :parm)
+  ψ = replacesites(ψ, ψ[b] * ψ[b+1];
+                   firstsite = b, lastsite = b+1,
+                   orthocenter = orthocenter,
+                   perm = [2, 1],
+                   kwargs...)
+  return ψ
+end
+
+# TODO: add a version of replacesites that
+# determines `firstsite` and `lastsite` from common
+# site indices of ψ and A
+
+"""
+    MPS(::ITensor, sites)
+
+Construct an MPS from an ITensor by decomposing it site
+by site.
+"""
+function MPS(A::ITensor, sites;
+             firstlinkind::Union{Nothing, Index} = nothing,
+             lastlinkind::Union{Nothing, Index} = nothing,
+             orthocenter::Int = length(sites),
+             kwargs...)
+  N = length(sites)
+  @assert order(A) == N + !isnothing(firstlinkind) + !isnothing(lastlinkind)
+  @assert hasinds(A, sites)
+  @assert isnothing(firstlinkind) || hasind(A, firstlinkind)
+  @assert isnothing(lastlinkind) || hasind(A, lastlinkind)
+
+  # TODO: generalize to other orthocenters.
+  # To minimize work, may need to loop from
+  # 1:orthocenter and reverse(orthocenter:N)
+  @assert orthocenter == N
+
+  ψ = Vector{ITensor}(undef, N)
+  Ã = A
+  l = firstlinkind
+  for n in 1:N-1
+    s = sites[n]
+    Lis = isnothing(l) ? (s,) : (l, s)
+    L, R = factorize(Ã, Lis; kwargs...)
+    l = commonind(L, R)
+    ψ[n] = L
+    Ã = R
+  end
+  ψ[N] = Ã
+  return MPS(ψ)
+end
+
+"""
+    MPO(::ITensor, sites)
+
+Construct an MPO from an ITensor by decomposing it site
+by site.
+"""
+function MPO(A::ITensor, sites;
+             firstlinkind::Union{Nothing, Index} = nothing,
+             lastlinkind::Union{Nothing, Index} = nothing,
+             orthocenter::Int = length(sites),
+             kwargs...)
+  N = length(sites)
+  @assert order(A) == 2*N + !isnothing(firstlinkind) + !isnothing(lastlinkind)
+  @assert hasinds(A, sites)
+  @assert hasinds(A, prime.(sites))
+  @assert isnothing(firstlinkind) || hasind(A, firstlinkind)
+  @assert isnothing(lastlinkind) || hasind(A, lastlinkind)
+
+  # TODO: generalize to other orthocenters.
+  # To minimize work, may need to loop from
+  # 1:orthocenter and reverse(orthocenter:N)
+  @assert orthocenter == N
+
+  ψ = Vector{ITensor}(undef, N)
+  Ã = A
+  l = firstlinkind
+  for n in 1:N-1
+    s = sites[n]
+    Lis = isnothing(l) ? (s, s') : (l, s, s')
+    L, R = factorize(Ã, Lis; kwargs...)
+    l = commonind(L, R)
+    ψ[n] = L
+    Ã = R
+  end
+  ψ[N] = Ã
+  M = MPO(ψ)
+  ITensors.setleftlim!(M, orthocenter-1)
+  ITensors.setrightlim!(M, orthocenter+1)
+  return M
+end
+
+"""
+    setindex!(::Union{MPS, MPO}, ::Union{MPS, MPO},
+              r::UnitRange{Int64})
+
+Sets a contiguous range of MPS/MPO tensors
+"""
+function Base.setindex!(ψ::MPST, ϕ::MPST,
+                        r::UnitRange{Int64}) where {MPST <: Union{MPS, MPO}}
+  @assert length(r) == length(ϕ)
+  # TODO: accept r::Union{AbstractRange{Int}, Vector{Int}}
+  # if r isa AbstractRange
+  #   @assert step(r) = 1
+  # else
+  #   all(==(1), diff(r))
+  # end
+  llim = ITensors.leftlim(ψ)
+  rlim = ITensors.rightlim(ψ)
+  for (j, n) in enumerate(r)
+    ψ[n] = ϕ[j]
+  end
+  if llim + 1 ≥ r[1]
+    ITensors.setleftlim!(ψ, ITensors.leftlim(ϕ) + r[1] - 1)
+  end
+  if rlim - 1 ≤ r[end]
+    ITensors.setrightlim!(ψ, ITensors.rightlim(ϕ) + r[1] - 1)
+  end
+  return ψ
+end
 
 
 """

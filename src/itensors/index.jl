@@ -1,3 +1,3 @@
 
-ITensors.hasind(s::Index) = x -> hasind(x, s)
+#ITensors.hasind(s::Index) = x -> hasind(x, s)
 

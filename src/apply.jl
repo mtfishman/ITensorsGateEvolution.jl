@@ -106,7 +106,7 @@ function ITensors.product(ops::Vector{<:ITensor},
   ns = 1:length(ψ)
   ns′ = findsiteinds(ψ0, s)
   # TODO: Move the sites back to the original ordering
-  #ψ = movesites(ψ, ns, ns′; kwargs...)
+  ψ = movesites(ψ, ns, ns′; kwargs...)
   return ψ
 end
 
