@@ -50,7 +50,7 @@ gates = ops(s, os)
 ψ0 = productMPS(s, "0")
 
 # Apply the gates
-ψ = apply(gates, ψ0; cutoff = 1e-15, maxdim = 32)
+ψ = apply(gates, ψ0; cutoff = 1e-15, maxdim = 100)
 @show dim(s[1])^(N ÷ 2)
 @show maxlinkdim(ψ)
 
@@ -62,5 +62,5 @@ return ψ
 
 end
 
-ψ = main()
+ψ = main();
 

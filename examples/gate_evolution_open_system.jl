@@ -56,24 +56,29 @@ M0 = MPO(s, "Id")
 
 s0 = siteinds(M0)
 
-M = apply(gates, M0; apply_dag = true, cutoff = 1e-15, maxdim = 100)
+M = apply(gates, M0; apply_dag = true, cutoff = 1e-15, maxdim = 500)
 @show dim(s[1])^(N ÷ 2)
 @show maxlinkdim(M)
 
 s = siteinds(M)
 for n in 1:N
-  #@assert hassameinds(s[n], s0[n])
+  @assert hassameinds(s[n], s0[n])
 end
 
 println("Evolution complete, test the result")
 
-ITensors.GLOBAL_PARAMS["WarnTensorOrder"] = 18
+set_warn_itensor_order!(18)
 
 prodM = apply(gates, prod(M0); apply_dag = true)
+
 @show prod(M) ≈ prodM
 @show norm(prod(M) - prodM) / norm(prodM)
 
+reset_warn_itensor_order!()
+
+return M
+
 end
 
-main()
+M = main();
 
