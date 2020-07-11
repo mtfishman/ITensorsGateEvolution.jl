@@ -1,9 +1,4 @@
 
-#Base.eachindex(A::ITensor) = eachindex(ITensors.tensor(A))
-
-#Base.setindex!(T::ITensor, x::Number, I::CartesianIndex) =
-#  setindex!(T, x, Tuple(I)...)
-
 #TODO: Make a constructor
 #  itensor(::Vector{Pair{Block, Array}}, ::IndexSet)
 #for example:
@@ -35,9 +30,4 @@ end
 ITensors.itensor(A::Array{<:Number},
                  inds::ITensors.QNIndex...) =
   itensor(A, IndexSet(inds...))
-
-#function hascommoninds(A::ITensor,
-#                       B::ITensor; kwargs...)
-#  return !isnothing(commonind(A, B; kwargs...))
-#end
 

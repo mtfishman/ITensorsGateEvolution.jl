@@ -2,15 +2,6 @@
 # TODO: Make the constructor
 # IndexSet{N, IndexT, DataT}(::Index...)
 
-#"""
-#    hasinds(is)
-#
-#Returns an anonymous function `x -> hasinds(x, is)` which
-#accepts an ITensor or IndexSet and returns `true` if the
-#ITensor or IndexSet has the indices `is`.
-#"""
-#ITensors.hasinds(s) = x -> hasinds(x, s)
-
 # TODO: export this. Maybe make this more
 # specific than an alias?
 const filterinds = inds

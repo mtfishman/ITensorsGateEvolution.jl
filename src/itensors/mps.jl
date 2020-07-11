@@ -1,24 +1,8 @@
 
-#Base.keys(ψ::Union{MPS, MPO}) = keys(ITensors.data(ψ))
-
-#function findfirstsiteind(ψ::Union{MPS, MPO},
-#                          s::Index)
-#  return findfirst(hasind(s), ψ)
-#end
-#
-#function findfirstsiteinds(ψ::Union{MPS, MPO},
-#                           s)
-#  return findfirst(hasinds(s), ψ)
-#end
-
-#function ITensors.productMPS(::Type{T},
-#                             sites::Vector{<:Index},
-#                             states::Union{String, Int}) where {T<:Number}
-#  ivals = [state(sites[n], states) for n in 1:length(sites)]
-#  return productMPS(T, ivals)
-#end
-
+# TODO: make this the definition for siteind
 """
+    firstsiteind(M::MPO, j::Int; plev = 0, kwargs...)
+
     siteind(M::MPO, j::Int; plev = 0, kwargs...)
 
 Return the first site Index found of the MPO.
@@ -27,7 +11,7 @@ By default, it returns the first site Index with prime
 level of 0. You can choose different filters, like tags,
 with the `kwargs`.
 """
-function ITensors.siteind(M::MPO, j::Int; plev::Int = 0, kwargs...)
+function firstsiteind(M::Union{MPS, MPO}, j::Int; plev::Int = 0, kwargs...)
   N = length(M)
   (N==1) && return firstind(M[1]; plev = plev, kwargs...)
 
@@ -41,8 +25,10 @@ function ITensors.siteind(M::MPO, j::Int; plev::Int = 0, kwargs...)
   return si
 end
 
-const firstsiteind = siteind
+# TODO: make this alias?
+#const firstsiteind = siteind
 
+# TODO: rename to allsiteinds?
 """
     siteinds(M::MPO, j::Int; kwargs...)
 
@@ -62,6 +48,7 @@ function ITensors.siteinds(M::Union{MPS, MPO}, j::Int; kwargs...)
   return si
 end
 
+# TODO: rename to allsiteinds?
 """
     siteinds(M::MPO; kwargs...)
 
@@ -75,7 +62,7 @@ ITensors.siteinds(M::MPO; kwargs...) =
 
 Get a Vector of the first site Index found on each site of M.
 """
-firstsiteinds(M::MPO; kwargs...) =
+firstsiteinds(M::Union{MPS, MPO}; kwargs...) =
   [firstsiteind(M, j; kwargs...) for j in 1:length(M)]
 
 function findsiteinds(ψ::Union{MPS, MPO},
@@ -103,7 +90,7 @@ function movesite(ψ::Union{MPS, MPO},
                   n1::Int, n2::Int;
                   orthocenter::Int = n2,
                   kwargs...)
-  n1 == n2 && return ψ
+  n1 == n2 && return copy(ψ)
   ψ = orthogonalize(ψ, n2)
   r = n1:n2-1
   ortho = "left"
@@ -120,7 +107,7 @@ end
 
 function movesite(ns::Vector{Int},
                   n1::Int, n2::Int)
-  n1 == n2 && return ns
+  n1 == n2 && return copy(ns)
   r = n1:n2-1
   if n1 > n2
     r = reverse(n2:n1-1)
@@ -132,10 +119,17 @@ function movesite(ns::Vector{Int},
   return ns
 end
 
+# TODO: make a permutesites(::MPS/MPO, perm)
+# function that that a permutation of the sites
+# p(1:N) for N sites
 function movesites(ψ::Union{MPS, MPO},
                    ns, ns′; kwargs...)
-  @assert length(ns) == length(ns′)
+  ψ = copy(ψ)
   N = length(ns)
+  @assert N == length(ns′)
+  p = sortperm(ns′)
+  ns = ns[p]
+  ns′ = ns′[p]
   ns = collect(ns)
   for i in 1:N
     ψ = movesite(ψ, ns[i], ns′[i]; kwargs...)
@@ -169,10 +163,6 @@ function ITensors.swapbondsites(ψ::MPO, b::Int; kwargs...)
                    kwargs...)
   return ψ
 end
-
-# TODO: add a version of replacesites that
-# determines `firstsite` and `lastsite` from common
-# site indices of ψ and A
 
 """
     MPS(::ITensor, sites)
@@ -281,7 +271,9 @@ function Base.setindex!(ψ::MPST, ϕ::MPST,
   return ψ
 end
 
-
+# TODO: add a version of replacesites that
+# determines `firstsite` and `lastsite` from common
+# site indices of ψ and A
 """
     replacesites(ψ::Union{MPS, MPO},
                  A::ITensor;
